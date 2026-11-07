@@ -30,6 +30,10 @@ The "expected reaction" panel simply averages the realized market moves that
 followed the most linguistically similar past statements — a nearest-neighbor,
 not a forecast.
 
+## Corrections
+
+- **Reaction window.** FOMC statements are released at 2pm ET, before the close. Reactions were previously measured from the announcement-day close, which excluded the announcement-day move itself. They are now measured from the prior close: the 1-day figure is announcement-day close vs prior close, and the 2-day and 5-day figures cover 2 and 5 trading days starting with the announcement day. VIX and OAS 1-day changes follow the same convention. Delete `outputs/market_reactions.csv` to rebuild the cache.
+
 ## Data sources
 
 - **Federal Reserve** — FOMC statement text, scraped from

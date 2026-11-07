@@ -82,24 +82,40 @@ def _download_history(start: dt.date, end: dt.date) -> pd.DataFrame:
     return close[keep].dropna(how="all")
 
 
+def _event_position(series: pd.Series, event_date: pd.Timestamp) -> int | None:
+    """Position of the first bar on/after ``event_date`` (the announcement day).
+
+    FOMC statements are released at 2pm ET, before the close, so the market
+    reaction starts on the announcement day itself.  The base price is
+    therefore the close of the *previous* bar (``position - 1``).
+    Returns ``None`` if there is no bar on/after the date or no prior bar.
+    """
+    idx = series.index
+    pos = int(idx.searchsorted(event_date, side="left"))
+    if pos >= len(series) or pos == 0:
+        return None
+    return pos
+
+
 def _forward_returns(
     series: pd.Series, event_date: pd.Timestamp, horizons: tuple[int, ...]
 ) -> dict[int, float]:
-    """Compute pct forward returns from the bar on/just before ``event_date``."""
+    """Percent return from the close before the announcement day.
+
+    Horizon ``h`` covers ``h`` trading days starting with the announcement
+    day, so ``h=1`` is announcement-day close vs prior close.
+    """
     series = series.dropna().sort_index()
     if series.empty:
         return {h: np.nan for h in horizons}
-
-    # Base = last available close at or before the event date.
-    on_or_before = series[series.index <= event_date]
-    if on_or_before.empty:
+    pos = _event_position(series, event_date)
+    if pos is None:
         return {h: np.nan for h in horizons}
-    base_price = on_or_before.iloc[-1]
-    base_pos = series.index.get_loc(on_or_before.index[-1])
+    base_price = series.iloc[pos - 1]
 
     out: dict[int, float] = {}
     for h in horizons:
-        target_pos = base_pos + h
+        target_pos = pos + h - 1
         if target_pos < len(series) and base_price:
             out[h] = float((series.iloc[target_pos] / base_price - 1.0) * 100.0)
         else:
@@ -110,15 +126,12 @@ def _forward_returns(
 def _level_change_1d(
     series: pd.Series, event_date: pd.Timestamp
 ) -> float:
-    """Absolute 1-day change in level (used for VIX points, TNX yield)."""
+    """Announcement-day change in level (VIX points, TNX yield)."""
     series = series.dropna().sort_index()
-    on_or_before = series[series.index <= event_date]
-    if on_or_before.empty:
+    pos = _event_position(series, event_date) if not series.empty else None
+    if pos is None:
         return np.nan
-    base_pos = series.index.get_loc(on_or_before.index[-1])
-    if base_pos + 1 < len(series):
-        return float(series.iloc[base_pos + 1] - series.iloc[base_pos])
-    return np.nan
+    return float(series.iloc[pos] - series.iloc[pos - 1])
 
 
 # --------------------------------------------------------------------------- #
@@ -151,13 +164,12 @@ def _fred_series(client, series_id: str, start: dt.date, end: dt.date) -> pd.Ser
 
 
 def _oas_change_1d(oas: pd.Series, event_date: pd.Timestamp) -> float:
-    """1-day change in HY OAS, in basis points (FRED reports percent)."""
+    """Announcement-day change in HY OAS, in basis points (FRED reports percent)."""
     oas = oas.dropna().sort_index()
-    on_or_before = oas[oas.index <= event_date]
-    after = oas[oas.index > event_date]
-    if on_or_before.empty or after.empty:
+    pos = _event_position(oas, event_date) if not oas.empty else None
+    if pos is None:
         return np.nan
-    return float((after.iloc[0] - on_or_before.iloc[-1]) * 100.0)
+    return float((oas.iloc[pos] - oas.iloc[pos - 1]) * 100.0)
 
 
 # --------------------------------------------------------------------------- #
