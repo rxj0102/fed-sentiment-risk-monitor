@@ -1,5 +1,7 @@
 # Fed Sentiment Risk Monitor
 
+[![CI](https://github.com/rxj0102/fed-sentiment-risk-monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/rxj0102/fed-sentiment-risk-monitor/actions/workflows/ci.yml)
+
 > Live FOMC statement hawkishness scoring + cross-asset risk reactions, in a single Streamlit page.
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://YOUR-APP-URL.streamlit.app)
