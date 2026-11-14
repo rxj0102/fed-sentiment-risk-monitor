@@ -233,28 +233,14 @@ def timeline_chart(
 
 @st.cache_data(ttl=config.CACHE_TTL_SECONDS, show_spinner=False)
 def _vix_levels_for_dates(dates: list) -> dict:
-    """Best-effort VIX close on each statement date for the timeline overlay."""
-    try:
-        import yfinance as yf
-    except Exception:
-        return {}
+    """VIX close (FRED VIXCLS) on or before each statement date for the timeline overlay."""
     if not dates:
         return {}
-    start = (min(pd.to_datetime(dates)) - pd.Timedelta(days=5)).date()
-    end = (max(pd.to_datetime(dates)) + pd.Timedelta(days=2)).date()
     try:
-        data = yf.download(
-            "^VIX", start=start.isoformat(), end=end.isoformat(),
-            progress=False, auto_adjust=True,
-        )
+        from data import opendata
+        close = opendata.fred("VIXCLS")["VIXCLS"].dropna()
     except Exception:
         return {}
-    if data.empty:
-        return {}
-    close = data["Close"]
-    if isinstance(close, pd.DataFrame):
-        close = close.iloc[:, 0]
-    close = close.dropna()
     out: dict = {}
     for d in pd.to_datetime(dates):
         on_or_before = close[close.index <= d]
@@ -397,10 +383,10 @@ def render_market_snapshot(snapshot: pd.DataFrame) -> None:
         st.info("Live market data unavailable.")
         return
     snap = snapshot.set_index("asset")
-    cols = st.columns(5)
-    order = ["VIX", "SPY", "TLT", "HYG", "TNX"]
+    cols = st.columns(4)
+    order = ["VIX", "SPY", "TLT", "TNX"]
     labels = {
-        "VIX": "VIX", "SPY": "SPY", "TLT": "TLT", "HYG": "HYG",
+        "VIX": "VIX", "SPY": "US Market", "TLT": "20Y Treasury",
         "TNX": "10Y Yield",
     }
     for col, asset in zip(cols, order):
@@ -561,7 +547,7 @@ def main() -> None:
 
     st.markdown("---")
     st.caption(
-        "Data: Federal Reserve (statements), yfinance (prices), FRED (HY OAS). "
+        "Data: Federal Reserve (statements), FRED and Ken French Data Library (market data). "
         "For research/educational use only — not investment advice."
     )
 

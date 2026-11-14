@@ -17,7 +17,7 @@
   lexicon, producing a single number from −100 (most dovish) to +100 (most hawkish).
 - **Finds the most similar past statements** by language (TF-IDF + cosine similarity)
   and shows how markets actually reacted after those historically similar meetings.
-- **Pulls live cross-asset data** (VIX, SPY, TLT, HYG, 10Y yield, HY credit spreads)
+- **Pulls cross-asset data from free open sources** (VIX, US equity market, 20y Treasury, 10Y yield, HY credit spreads)
   so you can compare today's tone against the market backdrop.
 
 ## Methodology
@@ -25,8 +25,8 @@
 | Component | Approach |
 |-----------|----------|
 | **Sentiment** | Rule-based lexicon of 50+ hawkish and 50+ dovish terms. Net score = (hawkish − dovish) / total words, scaled and clamped to [−100, +100]. |
-| **Similarity** | All statements (2010–present) are TF-IDF vectorized (uni- + bi-grams). A new statement is compared via cosine similarity; the top 5 matches are surfaced. |
-| **Market reactions** | For each statement date, 1/2/5-day forward returns are computed for each asset from yfinance, plus 1-day VIX point change and 1-day HY OAS change from FRED. |
+| **Similarity** | All statements (2011 to present) are TF-IDF vectorized (uni- + bi-grams). A new statement is compared via cosine similarity; the top 5 matches are surfaced. |
+| **Market reactions** | For each statement date, 1/2/5-day forward returns are computed for each asset from FRED and Ken French data, plus 1-day VIX point change and 1-day HY OAS change from FRED. |
 
 The "expected reaction" panel simply averages the realized market moves that
 followed the most linguistically similar past statements — a nearest-neighbor,
@@ -38,13 +38,57 @@ not a forecast.
 
 ## Data sources
 
-- **Federal Reserve** — FOMC statement text, scraped from
+All free, no API key:
+
+- **Federal Reserve**: FOMC statement text, scraped from
   [federalreserve.gov](https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm)
-  and cached locally.
-- **yfinance** — daily prices for VIX, SPY, TLT, HYG, and the 10Y yield (^TNX).
-- **FRED** — ICE BofA US High Yield OAS (`BAMLH0A0HYM2`). Requires a free
-  [FRED API key](https://fred.stlouisfed.org/docs/api/api_key.html) (optional —
-  the app degrades gracefully without it).
+  (calendar page plus the yearly historical materials pages) and cached locally.
+- **FRED** (public CSV endpoint): VIX (`VIXCLS`), 10Y yield (`DGS10`, shown as TNX = yield x 10), 20Y yield (`DGS20`, priced into a par bond index for the TLT label), S&P 500 (`SP500`), and ICE BofA US High Yield OAS (`BAMLH0A0HYM2`, which the keyless endpoint limits to the last three years).
+- **Ken French Data Library**: daily US market total return (Mkt-RF + RF) for the SPY label, extended with FRED SP500 price changes after its last published date.
+
+HYG was dropped: there is no free daily price series for a high yield bond ETF or index.
+
+## Results
+
+From `python scripts/summarize.py` (writes `outputs/summary.md`): 133 statements, 2011-01-26 to 2026-10-28. The lexicon labels 62 Strongly Hawkish, 38 Moderately Hawkish, 25 Neutral, 5 Moderately Dovish and 3 Strongly Dovish.
+
+Mean announcement day reaction (close before to close on the statement day):
+
+| Label | N | Mean score | US market 1d % | 20Y Treasury 1d % | VIX 1d (pts) | 10Y 1d (bp) |
+|---|---|---|---|---|---|---|
+| Strongly Dovish | 3 | -39.0 | -0.887 | -0.227 | -0.63 | -3.3 |
+| Moderately Dovish | 5 | -16.8 | -0.574 | +0.339 | -1.30 | +0.2 |
+| Neutral | 25 | 2.2 | -0.277 | +0.017 | +0.62 | -0.5 |
+| Moderately Hawkish | 38 | 19.5 | +0.365 | +0.134 | -0.47 | -0.8 |
+| Strongly Hawkish | 62 | 64.7 | -0.011 | +0.263 | +0.00 | -2.0 |
+
+Rank correlation between the sentiment score and the announcement day reaction:
+
+| Reaction | Spearman rho | p-value | N |
+|---|---|---|---|
+| US market 1d return | -0.043 | 0.622 | 133 |
+| 20Y Treasury 1d return | +0.253 | 0.003 | 133 |
+| VIX 1d change | +0.094 | 0.284 | 133 |
+| 10Y yield 1d change (bp) | -0.186 | 0.032 | 133 |
+
+The score has no relation to the equity or VIX reaction. It does relate to the bond reaction, but with the opposite sign to the naive reading: more hawkish wording goes with bonds rallying and yields falling on the day. The lexicon measures the level of hawkish language, not the surprise relative to expectations, and statements full of inflation language were often already priced. Treat the score as a description of tone, not a trading signal. The dovish groups have only 3 and 5 statements, so their averages are noise.
+
+**Tone change (surprise proxy).** The score minus the previous statement's score is a closer proxy for news in the wording than the level. It has no detectable relation to any reaction:
+
+| Reaction | Spearman rho | p-value | N |
+|---|---|---|---|
+| US market 1d return | -0.014 | 0.874 | 132 |
+| 20Y Treasury 1d return | +0.058 | 0.508 | 132 |
+| VIX 1d change | +0.114 | 0.194 | 132 |
+| 10Y yield 1d change (bp) | +0.018 | 0.837 | 132 |
+
+| Tone change tercile | N | Mean change | US market 1d % | 20Y Treasury 1d % | VIX 1d (pts) | 10Y 1d (bp) |
+|---|---|---|---|---|---|---|
+| More dovish | 44 | -16.5 | +0.153 | +0.055 | -0.61 | -0.7 |
+| Little change | 44 | +0.5 | -0.143 | +0.293 | +0.16 | -2.3 |
+| More hawkish | 44 | +17.3 | -0.007 | +0.204 | +0.22 | -1.2 |
+
+So the bond correlation with the score level reflects where the rate cycle was, not news in the statement. A word-count lexicon does not capture what moves markets on FOMC days; the expected path of rates (for example fed funds futures surprises) is the standard measure and would be the next thing to test.
 
 ## Local setup
 
@@ -53,28 +97,18 @@ git clone https://github.com/rxj0102/fed-sentiment-risk-monitor.git
 cd fed-sentiment-risk-monitor
 pip install -r requirements.txt
 
-# Optional: enable HY credit-spread data
-export FRED_API_KEY="your_key_here"   # or put it in a .env file
-
 streamlit run app.py
 ```
 
 The first run scrapes and caches historical statements (a minute or two);
 subsequent runs are near-instant thanks to on-disk caching and `@st.cache_data`.
 
-### Optional `.env`
-
-```dotenv
-FRED_API_KEY=your_fred_api_key
-```
-
 ## Deploy to Streamlit Cloud
 
 1. Push this repo to GitHub.
 2. Go to [share.streamlit.io](https://share.streamlit.io).
 3. Connect the repo and set the main file to **`app.py`**.
-4. (Optional) Add `FRED_API_KEY` under **App → Settings → Secrets**.
-5. Deploy — a live URL is generated instantly. Replace the badge URL at the top
+4. Deploy; a live URL is generated instantly. Replace the badge URL at the top
    of this README with it.
 
 ## Project structure
@@ -85,12 +119,14 @@ fed-sentiment-risk-monitor/
 ├── config.py               # paths, tickers, URLs, thresholds
 ├── data/
 │   ├── fetch_fed.py        # FOMC statement scraper + cache
-│   ├── fetch_market.py     # yfinance + FRED reactions
+│   ├── fetch_market.py     # open data market reactions
+│   ├── opendata.py         # FRED and Ken French downloaders (cached)
 │   └── statements/         # cached statements (.txt, gitignored)
 ├── nlp/
 │   ├── lexicon.py          # hawk/dove word lists + scorer
 │   └── similarity.py       # TF-IDF cosine similarity
-├── outputs/figures/
+├── scripts/summarize.py    # builds scores, reactions and outputs/summary.md
+├── outputs/                # sentiment_scores.csv, market_reactions.csv, summary.md
 ├── .streamlit/config.toml  # dark terminal theme
 ├── requirements.txt
 └── README.md
@@ -103,3 +139,11 @@ For research and educational purposes only. Nothing here is investment advice.
 ## License
 
 [MIT](LICENSE) © 2026 rxj0102
+
+## Data snapshot
+
+`outputs/open_data_manifest.json` records every open data file behind the results above (SHA-256, rows, first and last date). Ken French and FRED occasionally revise history; after a fresh download, check whether the inputs still match with:
+
+```bash
+python -c "from data.opendata import verify_manifest; print(verify_manifest('outputs/open_data_manifest.json'))"
+```

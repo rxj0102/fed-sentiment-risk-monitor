@@ -107,6 +107,16 @@ def scrape_statement_dates() -> list[dt.date]:
             dates.update(_extract_dates_from_html(page))
         time.sleep(config.REQUEST_DELAY_SECONDS)
 
+    # Strategy 3: FOMC historical materials pages (one per year, published with
+    # a lag of about five years); they link every statement of that year.
+    for year in range(config.HISTORY_START_YEAR, current_year + 1):
+        page = _http_get(
+            f"https://www.federalreserve.gov/monetarypolicy/fomchistorical{year}.htm"
+        )
+        if page:
+            dates.update(_extract_dates_from_html(page))
+        time.sleep(config.REQUEST_DELAY_SECONDS)
+
     filtered = sorted(
         d for d in dates if d.year >= config.HISTORY_START_YEAR and d <= dt.date.today()
     )
