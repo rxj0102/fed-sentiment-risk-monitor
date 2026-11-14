@@ -139,3 +139,11 @@ For research and educational purposes only. Nothing here is investment advice.
 ## License
 
 [MIT](LICENSE) © 2026 rxj0102
+
+## Data snapshot
+
+`outputs/open_data_manifest.json` records every open data file behind the results above (SHA-256, rows, first and last date). Ken French and FRED occasionally revise history; after a fresh download, check whether the inputs still match with:
+
+```bash
+python -c "from data.opendata import verify_manifest; print(verify_manifest('outputs/open_data_manifest.json'))"
+```
