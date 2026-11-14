@@ -19,15 +19,7 @@ import pandas as pd
 
 import config
 
-try:  # yfinance is required for live data but we degrade gracefully in tests
-    import yfinance as yf
-except Exception:  # pragma: no cover
-    yf = None  # type: ignore
-
-try:
-    from fredapi import Fred
-except Exception:  # pragma: no cover
-    Fred = None  # type: ignore
+from data import opendata
 
 logger = logging.getLogger(__name__)
 if not logger.handlers:
@@ -40,46 +32,47 @@ if not logger.handlers:
 # --------------------------------------------------------------------------- #
 # Price download helpers
 # --------------------------------------------------------------------------- #
-def _download_history(start: dt.date, end: dt.date) -> pd.DataFrame:
-    """Download adjusted close prices for all tracked tickers between dates.
+def _spy_index(start: dt.date, end: dt.date) -> pd.Series:
+    """US equity index for the SPY label from open data.
 
-    Returns a DataFrame indexed by date with one column per *friendly* asset
-    label (e.g. ``SPY``), not the raw ticker symbol.
+    Ken French US market total return (Mkt-RF + RF) where available, extended
+    with FRED SP500 price changes after the last Ken French date (the library
+    is updated monthly). Returned as an index level.
     """
-    if yf is None:
-        logger.error("yfinance unavailable; cannot download prices.")
-        return pd.DataFrame()
+    ff = opendata.french("F-F_Research_Data_Factors_daily")
+    ret = (ff["Mkt-RF"] + ff["RF"]).dropna()
+    sp = opendata.fred("SP500")["SP500"].dropna().pct_change().dropna()
+    ret = pd.concat([ret, sp[sp.index > ret.index[-1]]])
+    level = 100.0 * (1.0 + ret).cumprod()
+    return level.loc[pd.Timestamp(start): pd.Timestamp(end)]
 
-    symbol_to_label = {sym: label for label, sym in config.MARKET_TICKERS.items()}
-    symbols = list(symbol_to_label)
 
+def _download_history(start: dt.date, end: dt.date) -> pd.DataFrame:
+    """Daily levels for the tracked assets from open data (no Yahoo Finance).
+
+    Returns a DataFrame indexed by date with one column per friendly label:
+
+    * VIX: FRED VIXCLS
+    * SPY: Ken French US market total return, then FRED SP500 (see _spy_index)
+    * TLT: 20y constant maturity Treasury par bond index priced from FRED DGS20
+    * TNX: FRED DGS10 x 10, matching the CBOE TNX convention (yield * 10)
+
+    HYG is not available: there is no free daily high yield bond price series.
+    """
+    s, e = pd.Timestamp(start), pd.Timestamp(end)
+    out: dict[str, pd.Series] = {}
     try:
-        raw = yf.download(
-            symbols,
-            start=start.isoformat(),
-            end=(end + dt.timedelta(days=1)).isoformat(),
-            progress=False,
-            auto_adjust=True,
-            group_by="column",
-        )
+        out["VIX"] = opendata.fred("VIXCLS")["VIXCLS"].dropna()
+        out["SPY"] = _spy_index(start, end)
+        tlt = opendata.par_bond_returns(opendata.fred("DGS20")["DGS20"], 20)
+        out["TLT"] = 100.0 * (1.0 + tlt).cumprod()
+        out["TNX"] = opendata.fred("DGS10")["DGS10"].dropna() * 10.0
     except Exception as exc:  # pragma: no cover - network
-        logger.error("yfinance download failed: %s", exc)
+        logger.error("Open data download failed: %s", exc)
         return pd.DataFrame()
-
-    if raw.empty:
-        return pd.DataFrame()
-
-    # Normalise to a simple close-price frame keyed by friendly label.
-    if isinstance(raw.columns, pd.MultiIndex):
-        close = raw["Close"] if "Close" in raw.columns.get_level_values(0) else raw
-    else:  # single ticker case
-        close = raw[["Close"]]
-        close.columns = symbols
-
-    close = close.rename(columns=symbol_to_label)
-    # Keep only known labels, drop fully empty columns.
-    keep = [c for c in close.columns if c in config.MARKET_TICKERS]
-    return close[keep].dropna(how="all")
+    df = pd.DataFrame(out).sort_index().loc[s:e]
+    keep = [c for c in df.columns if c in config.MARKET_TICKERS]
+    return df[keep].dropna(how="all")
 
 
 def _event_position(series: pd.Series, event_date: pd.Timestamp) -> int | None:
@@ -137,27 +130,20 @@ def _level_change_1d(
 # --------------------------------------------------------------------------- #
 # FRED helpers
 # --------------------------------------------------------------------------- #
-def _fred_client() -> "Fred | None":
-    if Fred is None or not config.FRED_API_KEY:
-        return None
-    try:
-        return Fred(api_key=config.FRED_API_KEY)
-    except Exception as exc:  # pragma: no cover
-        logger.warning("Could not initialise FRED client: %s", exc)
-        return None
+def _fred_client() -> "bool":
+    """FRED is read from its public CSV endpoint; no API key is needed."""
+    return True
 
 
 def _fred_series(client, series_id: str, start: dt.date, end: dt.date) -> pd.Series:
-    if client is None:
-        return pd.Series(dtype=float)
+    """FRED series between dates via the keyless CSV endpoint.
+
+    Note: ICE BofA series such as the HY OAS are limited by FRED to the most
+    recent three years on this endpoint.
+    """
     try:
-        s = client.get_series(
-            series_id,
-            observation_start=start.isoformat(),
-            observation_end=end.isoformat(),
-        )
-        s.index = pd.to_datetime(s.index)
-        return s.dropna()
+        s = opendata.fred(series_id)[series_id].dropna()
+        return s.loc[pd.Timestamp(start): pd.Timestamp(end)]
     except Exception as exc:  # pragma: no cover - network
         logger.warning("FRED fetch failed for %s: %s", series_id, exc)
         return pd.Series(dtype=float)
@@ -284,9 +270,6 @@ def get_live_snapshot() -> pd.DataFrame:
 
     Columns: ``asset``, ``price``, ``change``, ``pct_change``.
     """
-    if yf is None:
-        return pd.DataFrame(columns=["asset", "price", "change", "pct_change"])
-
     end = dt.date.today() + dt.timedelta(days=1)
     start = end - dt.timedelta(days=10)
     prices = _download_history(start, end)

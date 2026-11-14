@@ -52,17 +52,17 @@ USER_AGENT: str = (
 # --------------------------------------------------------------------------- #
 # Market data
 # --------------------------------------------------------------------------- #
-# yfinance tickers keyed by a friendly label.
+# Labels for the tracked assets. Values describe the open data source
+# (see data/fetch_market.py). HYG was dropped: no free daily HY bond price series.
 MARKET_TICKERS: dict[str, str] = {
-    "VIX": "^VIX",
-    "SPY": "SPY",
-    "TLT": "TLT",
-    "HYG": "HYG",
-    "TNX": "^TNX",  # CBOE 10-Year Treasury Note Yield index (yield * 10)
+    "VIX": "FRED VIXCLS",
+    "SPY": "Ken French US market total return, then FRED SP500",
+    "TLT": "20y Treasury par bond priced from FRED DGS20",
+    "TNX": "FRED DGS10 x 10 (CBOE TNX convention)",
 }
 
 # Assets used for forward-return reaction analysis.
-REACTION_ASSETS: list[str] = ["VIX", "SPY", "TLT", "HYG", "TNX"]
+REACTION_ASSETS: list[str] = ["VIX", "SPY", "TLT", "TNX"]
 
 # FRED series.
 FRED_HY_OAS_SERIES: str = "BAMLH0A0HYM2"  # ICE BofA US High Yield OAS
@@ -97,7 +97,7 @@ CACHE_TTL_SECONDS: int = 3600  # refresh once per hour
 # --------------------------------------------------------------------------- #
 # Credentials
 # --------------------------------------------------------------------------- #
-# FRED API key is optional. The app degrades gracefully (skips OAS) without it.
+# Not needed: FRED data is read from its public CSV endpoint. Kept for compatibility.
 FRED_API_KEY: str | None = os.environ.get("FRED_API_KEY")
 
 # --------------------------------------------------------------------------- #
