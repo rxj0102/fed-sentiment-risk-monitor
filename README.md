@@ -6,7 +6,7 @@
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://YOUR-APP-URL.streamlit.app)
 
-<!-- demo.gif — add after first deploy -->
+<!-- demo.gif: add after first deploy -->
 ![demo](demo.gif)
 
 ---
@@ -28,8 +28,8 @@
 | **Similarity** | All statements (2011 to present) are TF-IDF vectorized (uni- + bi-grams). A new statement is compared via cosine similarity; the top 5 matches are surfaced. |
 | **Market reactions** | For each statement date, 1/2/5-day forward returns are computed for each asset from FRED and Ken French data, plus 1-day VIX point change and 1-day HY OAS change from FRED. |
 
-The "expected reaction" panel simply averages the realized market moves that
-followed the most linguistically similar past statements — a nearest-neighbor,
+The *expected reaction* panel simply averages the realized market moves that
+followed the most linguistically similar past statements: a nearest-neighbor,
 not a forecast.
 
 ## Corrections
