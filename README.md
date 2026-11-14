@@ -73,6 +73,23 @@ Rank correlation between the sentiment score and the announcement day reaction:
 
 The score has no relation to the equity or VIX reaction. It does relate to the bond reaction, but with the opposite sign to the naive reading: more hawkish wording goes with bonds rallying and yields falling on the day. The lexicon measures the level of hawkish language, not the surprise relative to expectations, and statements full of inflation language were often already priced. Treat the score as a description of tone, not a trading signal. The dovish groups have only 3 and 5 statements, so their averages are noise.
 
+**Tone change (surprise proxy).** The score minus the previous statement's score is a closer proxy for news in the wording than the level. It has no detectable relation to any reaction:
+
+| Reaction | Spearman rho | p-value | N |
+|---|---|---|---|
+| US market 1d return | -0.014 | 0.874 | 132 |
+| 20Y Treasury 1d return | +0.058 | 0.508 | 132 |
+| VIX 1d change | +0.114 | 0.194 | 132 |
+| 10Y yield 1d change (bp) | +0.018 | 0.837 | 132 |
+
+| Tone change tercile | N | Mean change | US market 1d % | 20Y Treasury 1d % | VIX 1d (pts) | 10Y 1d (bp) |
+|---|---|---|---|---|---|---|
+| More dovish | 44 | -16.5 | +0.153 | +0.055 | -0.61 | -0.7 |
+| Little change | 44 | +0.5 | -0.143 | +0.293 | +0.16 | -2.3 |
+| More hawkish | 44 | +17.3 | -0.007 | +0.204 | +0.22 | -1.2 |
+
+So the bond correlation with the score level reflects where the rate cycle was, not news in the statement. A word-count lexicon does not capture what moves markets on FOMC days; the expected path of rates (for example fed funds futures surprises) is the standard measure and would be the next thing to test.
+
 ## Local setup
 
 ```bash

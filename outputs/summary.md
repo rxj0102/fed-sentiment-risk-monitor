@@ -19,4 +19,19 @@ Means of announcement day reactions (close before to close on the statement day)
 | VIX 1d change | +0.094 | 0.284 | 133 |
 | 10Y yield 1d change (bp) | -0.186 | 0.032 | 133 |
 
+Tone change (score minus previous statement's score) vs announcement day reaction:
+
+| Reaction | Spearman rho | p-value | N |
+|---|---|---|---|
+| US market 1d return | -0.014 | 0.874 | 132 |
+| 20Y Treasury 1d return | +0.058 | 0.508 | 132 |
+| VIX 1d change | +0.114 | 0.194 | 132 |
+| 10Y yield 1d change (bp) | +0.018 | 0.837 | 132 |
+
+| Tone change tercile | N | Mean change | US market 1d % | 20Y Treasury 1d % | VIX 1d (pts) | 10Y 1d (bp) |
+|---|---|---|---|---|---|---|
+| More dovish | 44 | -16.5 | +0.153 | +0.055 | -0.61 | -0.7 |
+| Little change | 44 | +0.5 | -0.143 | +0.293 | +0.16 | -2.3 |
+| More hawkish | 44 | +17.3 | -0.007 | +0.204 | +0.22 | -1.2 |
+
 HY OAS 1d change available for 25 statements (FRED keyless endpoint covers the last three years only).
