@@ -229,6 +229,18 @@ def score_all(
     return df
 
 
+def add_tone_change(scores: pd.DataFrame) -> pd.DataFrame:
+    """Add ``tone_change``: this statement's score minus the previous one's.
+
+    The level of hawkish language is largely known before a meeting (it moves
+    slowly with the policy cycle); the change from the last statement is a
+    closer proxy for the news in the wording. The first statement gets NaN.
+    """
+    out = scores.sort_values("date").reset_index(drop=True).copy()
+    out["tone_change"] = out["sentiment_score"].diff()
+    return out
+
+
 # --------------------------------------------------------------------------- #
 # Highlighting helper (used by the Streamlit statement viewer)
 # --------------------------------------------------------------------------- #

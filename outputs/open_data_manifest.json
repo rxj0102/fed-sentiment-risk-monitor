@@ -1,0 +1,56 @@
+{
+  "generated_utc": "2026-11-14T18:02:23Z",
+  "sources": {
+    "fred": "https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}",
+    "french": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/{name}_CSV.zip",
+    "github": {
+      "vix_daily": "https://raw.githubusercontent.com/datasets/finance-vix/main/data/vix-daily.csv",
+      "sp500_monthly_shiller": "https://raw.githubusercontent.com/datasets/s-and-p-500/main/data/data.csv",
+      "sp500_constituents": "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv"
+    }
+  },
+  "files": {
+    "fred_BAMLH0A0HYM2.csv": {
+      "sha256": "c290bfeff44daea141c486b13f8c9583e8c9de0c243dd3c2bce8b7d1ef4d97a9",
+      "bytes": 12686,
+      "rows": 793,
+      "first": "2023-11-14",
+      "last": "2026-11-12"
+    },
+    "fred_DGS10.csv": {
+      "sha256": "ef864cd0a56c983f248fb34b46fc6f4e2b35bcee54b10cb5d0332ebfaea99d5b",
+      "bytes": 269391,
+      "rows": 16923,
+      "first": "1962-01-02",
+      "last": "2026-11-12"
+    },
+    "fred_DGS20.csv": {
+      "sha256": "0341ee6fdb3f01997bc8db0be368a17ce9135ad9fcce95ca086f8705277b8fa5",
+      "bytes": 262660,
+      "rows": 16923,
+      "first": "1962-01-02",
+      "last": "2026-11-12"
+    },
+    "fred_SP500.csv": {
+      "sha256": "6e092f266c10be5d347599680067e3563d7d9545dc4ed2815a45fea8d8acf272",
+      "bytes": 48941,
+      "rows": 2610,
+      "first": "2016-11-14",
+      "last": "2026-11-13"
+    },
+    "fred_VIXCLS.csv": {
+      "sha256": "31a10b41ad9938716016699776d4d2e14b729cffc7cd6db7ae509f4e2da6d5a2",
+      "bytes": 161952,
+      "rows": 9618,
+      "first": "1990-01-02",
+      "last": "2026-11-12"
+    },
+    "french_F-F_Research_Data_Factors_daily_0.csv": {
+      "sha256": "270abc38fd9cabb9f3c84cfab5339ef0492e3c61758e8d3284f0b869678c76b0",
+      "bytes": 801297,
+      "rows": 26338,
+      "first": "19260701",
+      "last": "20260930"
+    }
+  }
+}
