@@ -4,11 +4,6 @@
 
 > Live FOMC statement hawkishness scoring + cross-asset risk reactions, in a single Streamlit page.
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://YOUR-APP-URL.streamlit.app)
-
-<!-- demo.gif: add after first deploy -->
-![demo](demo.gif)
-
 ---
 
 ## How it works
