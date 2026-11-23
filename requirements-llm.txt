@@ -1,0 +1,5 @@
+# Optional: only for scripts/llm_lookahead.py run (the analysis needs only requirements.txt)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch==2.15.0
+transformers==5.24.0
+accelerate

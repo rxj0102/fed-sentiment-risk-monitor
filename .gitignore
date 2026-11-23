@@ -20,6 +20,7 @@ data/statements/*
 
 # Generated outputs
 outputs/*.csv
+!outputs/llm_probs.csv
 outputs/figures/*
 !outputs/figures/.gitkeep
 
