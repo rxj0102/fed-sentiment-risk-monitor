@@ -85,6 +85,14 @@ The score has no relation to the equity or VIX reaction. It does relate to the b
 
 So the bond correlation with the score level reflects where the rate cycle was, not news in the statement. A word-count lexicon does not capture what moves markets on FOMC days; the expected path of rates (for example fed funds futures surprises) is the standard measure and would be the next thing to test.
 
+## Does a language model see the future?
+
+A language model used to read Fed statements may look skilled only because it has read about what happened next. `scripts/llm_lookahead.py` tests this with a small open model run locally, Qwen2.5-1.5B-Instruct (released 2024-09-19), on all 133 statements, comparing statements it could have seen in training with the 18 it could not. Every probe reads the model's probabilities, because its top answer barely varies. Full table: [outputs/llm_lookahead.md](outputs/llm_lookahead.md).
+
+- **It knows when a statement was written.** With every year, date and link removed, it puts 0.22 probability on the true year of statements before its release (a uniform guess over 16 years gives 0.06) and ranks it first 26% of the time, most sharply for 2020 to 2023. It puts almost nothing on 2024 or later, including 2024 statements released before the model, so its knowledge ends with its training data, not its release date.
+- **It does not remember market moves.** Its probability that the 10 year yield rose on the statement day has an AUC of 0.51 against what happened (0.50 with the date shown); 0.5 is no knowledge.
+- So for this model the look-ahead risk is knowing the history around a statement, not recalling the day's move. A backtest of a language model signal should start after the model's training data ends. Larger models memorize more, so this null does not carry over to them, and 18 post-release statements make the after-release comparison imprecise.
+
 ## Local setup
 
 ```bash
